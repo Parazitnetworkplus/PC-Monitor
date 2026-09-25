@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PC Monitor</title><style>
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial;color:#eef6ff;background:linear-gradient(135deg,#0b1724,#12344a,#1d5365);min-height:100vh}
+.wrap{max-width:1100px;margin:auto;padding:28px}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.brand{display:flex;gap:14px;align-items:center}.ico{font-size:34px}.title{font-size:28px;font-weight:700}.sub{font-size:13px;color:#a9c4d6}
+button{border:0;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer}.main,.box{background:#0b172499;border:1px solid #ffffff1f;border-radius:18px;padding:20px;backdrop-filter:blur(10px)}
+.status{margin-bottom:18px;color:#a9d9bd}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#55d98a;margin-right:8px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.metric h4{margin:0 0 7px;color:#9eb8c8}.val{font-size:27px;font-weight:700}.bar{height:7px;background:#ffffff18;border-radius:10px;margin-top:12px}.fill{height:100%;width:0;background:#69b9e8;border-radius:10px;transition:.3s}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.box h3{margin-top:0}.box p{color:#c9dbe6;font-size:14px}.box b{color:white}.traffic{display:flex;gap:35px}.traffic strong{display:block;font-size:22px;margin-top:5px}
+@media(max-width:800px){.grid,.two{grid-template-columns:1fr 1fr}}@media(max-width:550px){.grid,.two{grid-template-columns:1fr}.wrap{padding:14px}}
+</style></head><body><div class="wrap"><div class="head"><div class="brand"><span class="ico">🖥️</span><div><div class="title">PC Monitor</div><div class="sub">LAN System Monitoring Dashboard</div></div></div><button onclick="connect()">Connect</button></div>
+<div class="main"><div class="status"><span class="dot"></span><span id="st">Disconnected</span></div>
+<div class="grid">
+<div class="box metric"><h4>CPU Usage</h4><div class="val" id="cpu">--%</div><div class="bar"><div class="fill" id="cb"></div></div></div>
+<div class="box metric"><h4>RAM Usage</h4><div class="val" id="ram">--%</div><div class="bar"><div class="fill" id="rb"></div></div></div>
+<div class="box metric"><h4>Disk Usage</h4><div class="val" id="disk">--%</div><div class="bar"><div class="fill" id="db"></div></div></div>
+</div>
+<div class="two"><div class="box"><h3>System Information</h3><p>Computer: <b id="host">--</b></p><p>CPU: <b id="proc">--</b></p><p>Cores / Threads: <b id="ct">--</b></p><p>OS: <b id="os">--</b></p><p>Uptime: <b id="up">--</b></p></div>
+<div class="box"><h3>Network Traffic</h3><div class="traffic"><div>↓ Download<strong id="down">0 MB/s</strong></div><div>↑ Upload<strong id="upload">0 MB/s</strong></div></div><h3 style="margin-top:28px">Storage</h3><p>Used: <b id="store">--</b></p></div></div>
+</div></div>
+<script>
+let base="";const $=id=>document.getElementById(id);
+function connect(){let x=prompt("Enter the monitored PC IP address:");if(!x)return;x=x.replace(/^https?:\/\//,"").split(":")[0].replace(/\/$/,"");base="http://"+x+":8000";localStorage.pcMonitorIP=x;update()}
+function fmt(x){let d=Math.floor(x/86400);x%=86400;let h=Math.floor(x/3600);x%=3600;let m=Math.floor(x/60);return `${d}d ${h}h ${m}m ${x%60}s`}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function update(){if(!base)return;try{let j=await (await fetch(base+"/api/status")).json();if(!j.ok)throw Error(j.error);let d=j.data,s=d.system,u=d.usage;
+$("st").textContent="Connected • Live";$("cpu").textContent=u.cpu+"%";$("ram").textContent=u.ram+"%";$("disk").textContent=u.disk+"%";
+$("cb").style.width=u.cpu+"%";$("rb").style.width=u.ram+"%";$("db").style.width=u.disk+"%";
+$("host").textContent=s.hostname;$("proc").textContent=s.cpu;$("ct").textContent=(s.cores||"?")+" / "+(s.threads||"?");$("os").textContent=s.os;$("up").textContent=fmt(d.uptime);
+$("down").textContent=u.download+" MB/s";$("upload").textContent=u.upload+" MB/s";$("store").textContent=u.disk_used_gb+" / "+u.disk_total_gb+" GB";
+
+}catch(e){$("st").textContent="Connection failed"}}let saved=localStorage.pcMonitorIP;if(saved){base="http://"+saved+":8000";update()}setInterval(update,2000);
+</script></body></html>
